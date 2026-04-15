@@ -164,7 +164,9 @@ const record = reactive({
   metadata: '',
   webhookUrl: '',
   canSign: null,
+  signed: false,
   completed: false,
+  currentPartyToken: '',
   currentPartyName: '',
   party1Token: '',
   party1Name: '',
@@ -193,7 +195,7 @@ const currentParty = computed(() => {
   return null
 })
 
-const hasParty2 = computed(() => !!record.party2_name)
+const hasParty2 = computed(() => !!record.party2Name)
 const hasSigned = computed(() => {
   if (currentParty.value === 1) return !!record.party1Signed
   if (currentParty.value === 2) return !!record.party2Signed
