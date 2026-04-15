@@ -14,7 +14,7 @@
           :disabled="loading || !!errorMessage || invalidLink">
           Détails du document
         </BaseButton>
-        <BaseButton variant="secondary" @click="downloadPdf" :disabled="!record.pdf_url || loading || invalidLink">
+        <BaseButton variant="secondary" @click="downloadPdf" :disabled="!record.downloadUrl || loading || invalidLink">
           Télécharger le PDF
         </BaseButton>
       </div>
@@ -47,8 +47,8 @@
               </div>
             </template>
 
-            <template v-else-if="record.preview_jpg_url">
-              <img :src="record.preview_jpg_url" alt="Aperçu du document"
+            <template v-else-if="record.previewJpgUrl">
+              <img :src="record.previewJpgUrl" alt="Aperçu du document"
                 class="w-full h-full object-contain rounded-3xl" />
             </template>
 
@@ -88,7 +88,7 @@
             </p>
           </div>
 
-          <BaseButton size="lg" icon="signature" :disabled="hasSigned || loading || !!errorMessage"
+          <BaseButton size="lg" icon="signature" :disabled="hasSigned || loading || !!errorMessage || (record.canSign === false)"
             @click="openSignatureModal">
             {{ hasSigned ? 'Déjà signé' : 'Signer le document' }}
           </BaseButton>
@@ -114,7 +114,7 @@
         </div>
         <div>
           <p class="font-semibold">Callback webhook</p>
-          <p>{{ record.webhook_url || 'Aucun configuré' }}</p>
+          <p>{{ record.webhookUrl || 'Aucun configuré' }}</p>
         </div>
       </div>
       <template #footer>
@@ -159,20 +159,23 @@ const token = route.params.token || ''
 
 const record = reactive({
   sdid: null,
-  pdf_url: '',
-  preview_jpg_url: '',
-  webhook_url: '',
+  downloadUrl: '',
+  previewJpgUrl: '',
   metadata: '',
-  party1_token: '',
-  party1_name: '',
-  party1_msisdn: null,
-  party1_sign_jpg_url: '',
-  party1_signed_on: null,
-  party2_token: '',
-  party2_name: '',
-  party2_msisdn: null,
-  party2_sign_jpg_url: '',
-  party2_signed_on: null
+  webhookUrl: '',
+  canSign: null,
+  completed: false,
+  currentPartyName: '',
+  party1Token: '',
+  party1Name: '',
+  party1Msisdn: null,
+  party1SignJpgUrl: '',
+  party1Signed: false,
+  party2Token: '',
+  party2Name: '',
+  party2Msisdn: null,
+  party2SignJpgUrl: '',
+  party2Signed: false
 })
 
 const loading = ref(true)
@@ -190,30 +193,30 @@ const currentParty = computed(() => {
   return null
 })
 
-const hasParty2 = computed(() => !!record.party2_token)
+const hasParty2 = computed(() => !!record.party2_name)
 const hasSigned = computed(() => {
-  if (currentParty.value === 1) return !!record.party1_signed_on
-  if (currentParty.value === 2) return !!record.party2_signed_on
+  if (currentParty.value === 1) return !!record.party1Signed
+  if (currentParty.value === 2) return !!record.party2Signed
   return false
 })
 
 const party1Status = computed(() => {
-  if (!record.party1_name) return 'Statut de la partie 1 indisponible'
-  return record.party1_signed_on
-    ? `${record.party1_name} a signé`
-    : `${record.party1_name} n'a pas signé`
+  if (!record.party1Name) return 'Statut de la partie 1 indisponible'
+  return record.party1Signed
+    ? `${record.party1Name} a signé`
+    : `${record.party1Name} n'a pas signé`
 })
 
 const party2Status = computed(() => {
-  if (!record.party2_name) return 'Aucune deuxième partie requise'
-  return record.party2_signed_on
-    ? `${record.party2_name} a signé`
-    : `${record.party2_name} n'a pas signé`
+  if (!record.party2Name) return 'Aucune deuxième partie requise'
+  return record.party2Signed
+    ? `${record.party2Name} a signé`
+    : `${record.party2Name} n'a pas signé`
 })
 
 const statusLabel = computed(() => {
   if (!record.sdid) return 'En attente'
-  if (record.party1_signed_on && (!record.party2_token || record.party2_signed_on)) return 'Terminé'
+  if (record.party1Signed && (!record.party2Name || record.party2Signed)) return 'Terminé'
   return 'En attente de signatures'
 })
 
@@ -241,8 +244,8 @@ const loadRecord = async () => {
 }
 
 const downloadPdf = () => {
-  if (!record.pdf_url) return
-  window.open(record.pdf_url, '_blank')
+  if (!record.downloadUrl) return
+  window.open(record.downloadUrl, '_blank')
 }
 
 const openSignatureModal = async () => {
@@ -299,11 +302,11 @@ const submitSignatureAction = async () => {
     const result = await submitSignature(token, signaturePng)
 
     if (currentParty.value === 1) {
-      record.party1_signed_on = result.party1_signed_on ?? new Date().toISOString()
-      record.party1_sign_jpg_url = result.party1_sign_jpg_url ?? signaturePng
+      record.party1Signed = result.party1Signed ?? true
+      record.party1SignJpgUrl = result.party1SignJpgUrl ?? signaturePng
     } else if (currentParty.value === 2) {
-      record.party2_signed_on = result.party2_signed_on ?? new Date().toISOString()
-      record.party2_sign_jpg_url = result.party2_sign_jpg_url ?? signaturePng
+      record.party2Signed = result.party2Signed ?? true
+      record.party2SignJpgUrl = result.party2SignJpgUrl ?? signaturePng
     }
 
     signatureModalOpen.value = false
