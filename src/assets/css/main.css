@@ -1,0 +1,25 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #2563eb;
+  --color-secondary: #64748b;
+  --color-success: #16a34a;
+  --color-error: #dc2626;
+
+  --font-sans: "Inter", "system-ui", "-apple-system", "sans-serif";
+}
+
+@layer base {
+  html {
+    @apply antialiased text-slate-900;
+  }
+
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6 {
+    @apply font-semibold tracking-tight;
+  }
+}
