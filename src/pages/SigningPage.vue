@@ -1,4 +1,9 @@
 <template>
+  <!-- Full-screen loader overlay for submission -->
+  <div v-if="signing" class="fixed inset-0 z-[9999] flex items-center justify-center bg-white/80 backdrop-blur-sm">
+    <BaseLoader label="Enregistrement de votre signature..." />
+  </div>
+
   <div class="max-w-6xl mx-auto space-y-8">
     <div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between border-b border-slate-200 pb-4">
       <div>
@@ -303,13 +308,7 @@ const submitSignatureAction = async () => {
     const signaturePng = signaturePad.value.toDataURL('image/png')
     const result = await submitSignature(token, signaturePng)
 
-    if (currentParty.value === 1) {
-      record.party1Signed = result.party1Signed ?? true
-      record.party1SignJpgUrl = result.party1SignJpgUrl ?? signaturePng
-    } else if (currentParty.value === 2) {
-      record.party2Signed = result.party2Signed ?? true
-      record.party2SignJpgUrl = result.party2SignJpgUrl ?? signaturePng
-    }
+    Object.assign(record, result)
 
     signatureModalOpen.value = false
   } catch (error) {
