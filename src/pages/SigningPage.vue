@@ -1,7 +1,7 @@
 <template>
   <!-- Full-screen loader overlay for submission -->
   <div v-if="signing" class="fixed inset-0 z-[9999] flex items-center justify-center bg-white/80 backdrop-blur-sm">
-    <BaseLoader label="Enregistrement de votre signature..." />
+    <BaseLoader label="traitement en cours..." />
   </div>
 
   <div class="max-w-6xl mx-auto space-y-8">
@@ -14,26 +14,19 @@
           Jeton d'accès : <span class="font-medium text-slate-700">{{ token || 'Aucun jeton' }}</span>
         </p>
       </div>
-      <div class="flex flex-wrap gap-3">
-        <BaseButton variant="outline" @click="detailModalOpen = true"
-          :disabled="loading || !!errorMessage || invalidLink">
-          Détails du document
-        </BaseButton>
-        <BaseButton variant="secondary" @click="downloadPdf" :disabled="!record.downloadUrl || loading || invalidLink">
-          Télécharger le PDF
-        </BaseButton>
-      </div>
+
     </div>
 
     <div v-if="false" class="hidden"></div>
 
     <div v-else class="grid gap-6 lg:grid-cols-[1.8fr_1fr]">
       <section class="space-y-6">
-        <div class="rounded-3xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+        <div class="rounded-3xl border border-slate-200 bg-white shadow-sm">
+
           <div class="p-6 border-b border-slate-200 flex items-center justify-between gap-4">
             <div>
-              <h2 class="text-xl font-semibold text-slate-900">Aperçu du document</h2>
-              <p class="text-sm text-slate-500 mt-1">Aperçu généré à partir du document hébergé.</p>
+              <h2 class="text-xl font-semibold text-slate-900">Aperçu du document (page {{pageNumber+1}} / {{record.previewJpgUrl.length}})</h2>
+              <p class="text-sm text-slate-500 mt-1" v-if="record.previewJpgUrl && record.previewJpgUrl.length>1">Cliquez sur le document pour feuilleter ses pages</p>
             </div>
             <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
               {{ statusLabel }}
@@ -52,9 +45,44 @@
               </div>
             </template>
 
-            <template v-else-if="record.previewJpgUrl">
-              <img :src="record.previewJpgUrl" alt="Aperçu du document"
+            <!--template v-else-if="record.previewJpgUrl && record.previewJpgUrl.length>0">
+              <img :src="record.previewJpgUrl[pageNumber]" @click.stop="flickPage" alt="Aperçu du document"
                 class="w-full h-full object-contain rounded-3xl" />
+            </template-->
+
+            <template v-else-if="record.previewJpgUrl && record.previewJpgUrl.length > 0">
+              <div class="relative w-full h-full flex items-center justify-center">
+                <!-- Bouton Précédent -->
+                <button
+                    v-if="record.previewJpgUrl.length > 1"
+                    @click.stop="prevPage"
+                    class="absolute left-0 -translate-x-1/2 z-10 bg-white shadow-lg rounded-full p-2 border border-slate-200 hover:bg-slate-50 transition-colors"
+                    title="Page précédente"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                  </svg>
+                </button>
+
+                <img
+                    :src="record.previewJpgUrl[pageNumber]"
+                    @click.stop="flickPage"
+                    alt="Aperçu du document"
+                    class="w-full h-full object-contain rounded-3xl shadow-sm"
+                />
+
+                <!-- Bouton Suivant -->
+                <button
+                    v-if="record.previewJpgUrl.length > 1"
+                    @click.stop="flickPage"
+                    class="absolute right-0 translate-x-1/2 z-10 bg-white shadow-lg rounded-full p-2 border border-slate-200 hover:bg-slate-50 transition-colors"
+                    title="Page suivante"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                  </svg>
+                </button>
+              </div>
             </template>
 
             <template v-else>
@@ -63,6 +91,8 @@
                 <p class="mt-2 text-sm">Veuillez télécharger le PDF pour voir le document complet.</p>
               </div>
             </template>
+
+
           </div>
         </div>
       </section>
@@ -72,15 +102,12 @@
           <h3 class="text-lg font-semibold text-slate-900">Statut de signature</h3>
           <div class="mt-4 space-y-4 text-sm text-slate-700">
             <div class="rounded-2xl bg-slate-50 p-4">
-              <p class="font-medium">Partie 1</p>
+              <p class="font-medium">Signataire 1</p>
               <p class="mt-1 text-slate-500">{{ party1Status }}</p>
             </div>
             <div class="rounded-2xl bg-slate-50 p-4" v-if="hasParty2">
-              <p class="font-medium">Partie 2</p>
+              <p class="font-medium">Signataire 2</p>
               <p class="mt-1 text-slate-500">{{ party2Status }}</p>
-            </div>
-            <div v-else class="rounded-2xl bg-slate-50 p-4 text-slate-500">
-              <p>Aucune deuxième signature n'est requise pour ce document.</p>
             </div>
           </div>
         </div>
@@ -100,50 +127,44 @@
 
           <div class="rounded-3xl border border-slate-100 bg-slate-50 p-4 text-sm text-slate-600">
             <p class="font-semibold">Étape suivante</p>
-            <p class="mt-2">Lorsque votre signature est enregistrée, le backend mettra à jour le statut du document et
-              déclenchera le webhook de la plateforme.</p>
+            <p class="mt-2" v-if="hasParty2">Après signature des 2 parties, vous recevrez le document par email.</p>
+            <p class="mt-2" v-else>Après votre signature, vous recevrez le document final par email.</p>
           </div>
         </div>
+
+        <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm flex flex-col gap-4">
+          <div>
+            <h3 class="text-lg font-semibold text-slate-900">Télécharger le PDF</h3>
+            <p class="mt-2 text-sm text-slate-500">
+              Cliquez sur le bouton pour obtenir le fichier original.
+            </p>
+          </div>
+
+          <BaseButton size="lg" variant="secondary" icon="download"  @click="downloadPdf" :disabled="!record.downloadUrl || loading || invalidLink">
+            Télécharger le PDF
+          </BaseButton>
+
+        </div>
+
+
+
       </aside>
     </div>
 
-    <BaseModal :show="detailModalOpen" title="Détails du document" @close="detailModalOpen = false">
-      <div class="space-y-4 text-sm text-slate-700">
-        <div>
-          <p class="font-semibold">ID du document</p>
-          <p>{{ record.sdid || 'N/A' }}</p>
-        </div>
-        <div>
-          <p class="font-semibold">Métadonnées</p>
-          <p>{{ record.metadata || 'N/A' }}</p>
-        </div>
-        <div>
-          <p class="font-semibold">Callback webhook</p>
-          <p>{{ record.webhookUrl || 'Aucun configuré' }}</p>
-        </div>
-      </div>
-      <template #footer>
-        <BaseButton @click="detailModalOpen = false">Fermer</BaseButton>
-      </template>
-    </BaseModal>
 
     <BaseModal :show="signatureModalOpen" title="Capturer votre signature" @close="signatureModalOpen = false">
       <div class="space-y-4">
-        <p class="text-sm text-slate-500">Tracez votre signature ci-dessous, puis enregistrez-la pour compléter le flux
-          du document.</p>
+        <p class="text-sm text-slate-500">Tracez votre signature ci-dessous pour signer le document</p>
         <div class="rounded-3xl border border-slate-200 bg-white p-4">
           <canvas ref="signatureCanvas" class="w-full h-72 rounded-3xl bg-slate-50"></canvas>
         </div>
-        <div class="flex flex-wrap gap-3">
-          <BaseButton variant="outline" @click="clearSignature">Effacer</BaseButton>
-          <BaseButton variant="success" @click="submitSignatureAction" :disabled="signing">
-            {{ signing ? 'Enregistrement...' : 'Enregistrer la signature' }}
-          </BaseButton>
-        </div>
-        <p v-if="signatureError" class="text-sm text-red-600">{{ signatureError }}</p>
       </div>
       <template #footer>
-        <BaseButton variant="ghost" @click="signatureModalOpen = false">Fermer</BaseButton>
+        <p v-if="signatureError" class="text-sm text-red-600">{{ signatureError }}</p>
+        <BaseButton variant="outline" @click="clearSignature">Effacer</BaseButton>
+        <BaseButton @click="submitSignatureAction" :disabled="signing">
+          {{ signing ? 'en cours...' : 'Signer le document' }}
+        </BaseButton>
       </template>
     </BaseModal>
   </div>
@@ -161,6 +182,7 @@ import { fetchSigningRecord, submitSignature } from '@/services/signatureService
 const route = useRoute()
 const router = useRouter()
 const token = route.params.token || ''
+const pageNumber = ref(0)
 
 const record = reactive({
   sdid: null,
@@ -230,7 +252,7 @@ const statusLabel = computed(() => {
 const partyActionText = computed(() => {
   if (!record.sdid) return 'En attente du chargement des détails du document.'
   if (hasSigned.value) return 'Votre signature est déjà enregistrée pour ce document.'
-  return 'Utilisez le panneau de signature pour valider le document et continuer le flux du webhook.'
+  return 'Cliquez pour saisir votre signature.'
 })
 
 const loadRecord = async () => {
@@ -316,6 +338,16 @@ const submitSignatureAction = async () => {
   } finally {
     signing.value = false
   }
+}
+
+const flickPage = () => {
+  if(pageNumber.value<record.previewJpgUrl.length-1) pageNumber.value++
+  else pageNumber.value = 0;
+}
+
+const prevPage = () => {
+  if (pageNumber.value > 0) pageNumber.value--
+  else pageNumber.value = record.previewJpgUrl.length - 1
 }
 
 onMounted(() => {

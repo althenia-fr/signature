@@ -4,7 +4,7 @@
       <div class="max-w-7xl mx-auto flex justify-between items-center">
         <h1 class="text-xl font-bold text-primary flex items-center gap-2">
           <font-awesome-icon icon="file-signature" />
-          Signature Althenia
+          Signature Stimeo
         </h1>
       </div>
     </header>
@@ -15,7 +15,7 @@
 
     <footer class="bg-white border-t border-slate-200 py-6 px-6 mt-12">
       <div class="max-w-7xl mx-auto text-center text-sm text-slate-500">
-        &copy; {{ new Date().getFullYear() }} Plateforme de signature Althenia. Tous droits réservés.
+        &copy; {{ new Date().getFullYear() }} Signature Stimeo. Tous droits réservés.
       </div>
     </footer>
   </div>

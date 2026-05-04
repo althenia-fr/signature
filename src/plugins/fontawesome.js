@@ -10,7 +10,8 @@ import {
   faSpinner,
   faExclamationTriangle,
   faSearch,
-  faLinkSlash
+  faLinkSlash,
+  faDownload,
 } from '@fortawesome/free-solid-svg-icons'
 
 library.add(
@@ -22,7 +23,8 @@ library.add(
   faSpinner,
   faExclamationTriangle,
   faSearch,
-  faLinkSlash
+  faLinkSlash, 
+    faDownload,
 )
 
 export default FontAwesomeIcon

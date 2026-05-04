@@ -47,7 +47,7 @@ defineProps({
 })
 
 const variants = {
-  primary: 'bg-primary text-white hover:bg-blue-700 shadow-sm shadow-blue-200',
+  primary: 'bg-primary text-white hover:bg-slate-700 shadow-sm',
   secondary: 'bg-secondary text-white hover:bg-slate-700 shadow-sm shadow-slate-200',
   outline: 'bg-transparent border-2 border-slate-200 text-slate-700 hover:bg-slate-50',
   success: 'bg-success text-white hover:bg-green-700 shadow-sm shadow-green-200',

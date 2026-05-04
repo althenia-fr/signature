@@ -1,6 +1,8 @@
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || ''
+
 export async function fetchSigningRecord(token) {
   const normalizedToken = encodeURIComponent(token)
-  const response = await fetch(`/signature/get?token=${normalizedToken}`, {
+  const response = await fetch(`${API_BASE_URL}/signature/get?token=${normalizedToken}`, {
     headers: {
       'Accept': 'application/json'
     }
@@ -27,7 +29,7 @@ export async function fetchSigningRecord(token) {
 }
 
 export async function submitSignature(token, signatureJpgDataUrl) {
-  const response = await fetch('/signature/submit', {
+  const response = await fetch(`${API_BASE_URL}/signature/submit`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'
