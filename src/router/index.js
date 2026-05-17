@@ -22,6 +22,12 @@ const routes = [
     }
   },
   {
+    path: '/cancel',
+    name: 'cancel',
+    component: () => import('@/pages/CancelPage.vue'),
+    meta: { layout: 'DefaultLayout' },
+  },
+  {
     path: '/error',
     name: 'error',
     component: () => import('@/pages/ErrorPage.vue'),
