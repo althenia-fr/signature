@@ -1,7 +1,8 @@
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || ''
 
 export async function fetchCancelRecords(sdids,email) {
-  const response = await fetch(`${API_BASE_URL}/signature/cancel?sdids=${sdids}&email=${email}`, {
+  let urlEncodedEmail =encodeURIComponent(email);
+  const response = await fetch(`${API_BASE_URL}/signature/cancel?sdids=${sdids}&email=${urlEncodedEmail}`, {
     headers: {
       'Accept': 'application/json'
     }
